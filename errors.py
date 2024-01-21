@@ -13,13 +13,13 @@ def error_prop(x, func, parameter, covar):
     """
     Calculates 1 sigma error ranges for number or array. It uses error
     propagation with variances and covariances taken from the covar matrix.
-    Derivatives are calculated numerically. 
-    
+    Derivatives are calculated numerically.
+
     """
-    
+
     # initiate sigma the same shape as parameter
 
-    var = np.zeros_like(x)   # initialise variance vektor
+    var = np.zeros_like(x)  # initialise variance vektor
     # Nested loop over all combinations of the parameters
     for i in range(len(parameter)):
         # derivative with respect to the ith parameter
@@ -28,12 +28,10 @@ def error_prop(x, func, parameter, covar):
         for j in range(len(parameter)):
             # derivative with respct to the jth parameter
             deriv2 = deriv(x, func, parameter, j)
-            
-            
-                
+
             # multiplied with the i-jth covariance
-            # variance vektor 
-            var = var + deriv1*deriv2*covar[i, j]
+            # variance vektor
+            var = var + deriv1 * deriv2 * covar[i, j]
 
     sigma = np.sqrt(var)
     return sigma
@@ -50,26 +48,55 @@ def deriv(x, func, parameter, ip):
     # print("in", ip, parameter[ip])
     # create vector with zeros and insert delta value for relevant parameter
     # delta is calculated as a small fraction of the parameter value
-    scale = 1e-6   # scale factor to calculate the derivative
+    scale = 1e-6  # scale factor to calculate the derivative
     delta = np.zeros_like(parameter, dtype=float)
     val = scale * np.abs(parameter[ip])
-    delta[ip] = val  #scale * np.abs(parameter[ip])
-    
-    diff = 0.5 * (func(x, *parameter+delta) - func(x, *parameter-delta))
+    delta[ip] = val  # scale * np.abs(parameter[ip])
+
+    diff = 0.5 * (func(x, *parameter + delta) - func(x, *parameter - delta))
     dfdx = diff / val
 
     return dfdx
 
 
 def covar_to_corr(covar):
-    """ Converts the covariance matrix into a correlation matrix """
+    """Converts the covariance matrix into a correlation matrix"""
 
     # extract variances from the diagonal and calculate std. dev.
     sigma = np.sqrt(np.diag(covar))
     # construct matrix containing the sigma values
     matrix = np.outer(sigma, sigma)
     # and divide by it
-    corr = covar/matrix
-    
+    corr = covar / matrix
+
     return corr
-                       
+
+
+def err_ranges(x, func, param, sigma):
+    """
+    Calculates the upper and lower limits for the function, parameters and
+    sigmas for single value or array x. Functions values are calculated for
+    all combinations of +/- sigma and the minimum and maximum is determined.
+    Can be used for all number of parameters and sigmas >=1.
+    """
+
+    import itertools as iter
+
+    # initiate arrays for lower and upper limits
+    lower = func(x, *param)
+    upper = lower
+
+    uplow = []  # list to hold upper and lower limits for parameters
+    for p, s in zip(param, sigma):
+        pmin = p - s
+        pmax = p + s
+        uplow.append((pmin, pmax))
+
+    pmix = list(iter.product(*uplow))
+
+    for p in pmix:
+        y = func(x, *p)
+        lower = np.minimum(lower, y)
+        upper = np.maximum(upper, y)
+
+    return lower, upper
