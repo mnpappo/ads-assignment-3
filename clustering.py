@@ -135,7 +135,7 @@ energy, energy_t = reading_data("API_EG.ELC.NUCL.ZS_DS2_en_csv_v2_6304345.csv")
 energy = energy[["1990", "1995", "2000", "2005", "2010", "2015"]]
 # print(energy.describe())
 
-# map_corr(energy)
+map_corr(energy)
 column1 = "1990"
 column2 = "2015"
 
