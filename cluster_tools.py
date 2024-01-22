@@ -26,7 +26,7 @@ def map_corr(df, size=10):
     plt.matshow(corr, cmap="coolwarm")
     plt.xticks(range(len(corr.columns)), corr.columns, rotation=90)
     plt.yticks(range(len(corr.columns)), corr.columns)
-    plt.title("Nuclear Energy Use Correlation - Years vs Countries")
+    plt.title("Nuclear Energy Production Correlation - Years vs Countries")
     plt.colorbar()
     plt.show()
 

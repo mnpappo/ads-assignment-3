@@ -23,7 +23,7 @@ from data_processing import reading_data
 import importlib
 
 
-def get_clusters_and_centers(df, ncluster, y1, y2):
+def get_clusters_and_centers(df, ncluster, y1, y2, year=1990):
     """clusters_and_centers will plot clusters and its centers for given data
 
     Args:
@@ -31,6 +31,7 @@ def get_clusters_and_centers(df, ncluster, y1, y2):
         ncluster (int): number of clusters
         y1 (pd.DF): column name for x axis
         y2 (pd.DF): column name for y axis
+        y (pd.DF): column name for year
 
     Returns:
         df: returns dataframe with labels
@@ -54,15 +55,12 @@ def get_clusters_and_centers(df, ncluster, y1, y2):
     # cluster by cluster
     plt.figure(figsize=(8.0, 8.0))
 
-    cm = plt.cm.get_cmap("tab10")
-    sc = plt.scatter(df[y1], df[y2], 10, labels, marker="o", cmap=cm)
+    sc = plt.scatter(df[y1], df[y2], 10, labels, marker="o")
     plt.scatter(xcen, ycen, 45, "k", marker="d")
-    plt.xlabel(f"Electricity production from nuclear sources({y1})")
-    plt.ylabel(f"Electricity production from nuclear sources({y2})")
+    plt.xlabel(f"Electricity production from nuclear sources")
+    plt.ylabel(f"Electricity production from nuclear sources")
     plt.legend(*sc.legend_elements(), title="clusters")
-    plt.title(
-        "Clusters of Electricity production from nuclear sources in 1990 and 2010"
-    )
+    plt.title(f"Clusters of Electricity production from nuclear sources in {year}")
     plt.show()
 
     return df, centres
@@ -70,8 +68,7 @@ def get_clusters_and_centers(df, ncluster, y1, y2):
 
 def forecast_energy(data, country, start_year, end_year):
     """
-    forecast_energy will analyse data and optimize to forecast Energy Use in
-    Kg Oil equivalent per capita of selected country
+
 
     Parameters
     ----------
@@ -109,11 +106,9 @@ def forecast_energy(data, country, start_year, end_year):
     forecast = logistic(year, *param)
     low, up = err_ranges(year, logistic, param, sigma)
     plt.figure()
-    plt.plot(energy["Year"], energy["Energy"], label="Energy Use")
+    plt.plot(energy["Year"], energy["Energy"], label="Nuclear Energy Production")
     plt.plot(year, forecast, label="Forecast", color="k")
-    plt.fill_between(
-        year, low, up, color="yellow", alpha=0.7, label="Confidence Margin"
-    )
+    plt.fill_between(year, low, up, color="green", alpha=0.3, label="Confidence Margin")
     plt.xlabel("Year")
     plt.ylabel("Electricity production from nuclear sources")
     plt.legend()
@@ -126,7 +121,7 @@ def forecast_energy(data, country, start_year, end_year):
     low, up = err_ranges(2030, logistic, param, sigma)
     sig = np.abs(up - low) / (2.0 * 1e9)
     print(
-        f"Nuclear Energy Use by 2030 in {country}",
+        f"Nuclear Energy Production by 2030 in {country}",
         np.round(energy2030 * 1e9, 2),
         "+/-",
         np.round(sig * 1e9, 2),
@@ -140,7 +135,7 @@ energy, energy_t = reading_data("API_EG.ELC.NUCL.ZS_DS2_en_csv_v2_6304345.csv")
 energy = energy[["1990", "1995", "2000", "2005", "2010", "2015"]]
 # print(energy.describe())
 
-map_corr(energy)
+# map_corr(energy)
 column1 = "1990"
 column2 = "2015"
 
@@ -155,16 +150,18 @@ energy_norm, df_min, df_max = scaler(energy_ex)
 # print("Number of Clusters and Scores")
 ncluster = cluster_number(energy_ex, energy_norm)
 
-energy_norm, centers = get_clusters_and_centers(energy_norm, ncluster, column1, column2)
+_, centers = get_clusters_and_centers(energy_norm, ncluster, column1, column2, 1990)
+get_clusters_and_centers(energy_ex, ncluster, column1, column2, 2015)
 
 # Applying backscaling to get actual cluster centers
 actual_centers = backscale(centers, df_min, df_max)
 # print("actual_centers: ", actual_centers)
 
-nu_energy, centers = get_clusters_and_centers(energy_ex, ncluster, column1, column2)
-
-# Forecast Energy Use per capita for United Kingdom (Cluster 1),
+print(energy_ex[energy_ex["labels"] == 0].index.values)
+print(energy_ex[energy_ex["labels"] == 1].index.values)
+print(energy_ex[energy_ex["labels"] == 2].index.values)
+# Forecast Energy Production per capita for United Kingdom (Cluster 1),
 # United States (Cluster 2) and Korea, Rep. (Cluster 3)
-forecast_energy(energy_t, "United Kingdom", 1970, 2030)
+forecast_energy(energy_t, "Italy", 1970, 2030)
 forecast_energy(energy_t, "United States", 1970, 2030)
 forecast_energy(energy_t, "Korea, Rep.", 1970, 2030)
